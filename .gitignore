@@ -1,0 +1,26 @@
+# STM32CubeIDE Build directories
+Debug/
+Release/
+bin/
+obj/
+output/
+drivers/Inc/output/
+
+# Compiled objects and binaries
+*.elf
+*.bin
+*.hex
+*.o
+*.d
+*.su
+*.cyclo
+*.map
+*.list
+*.exe
+
+# Log files
+*.log
+
+# Operating system files
+Thumbs.db
+.DS_Store
