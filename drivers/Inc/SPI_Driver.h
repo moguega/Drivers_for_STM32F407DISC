@@ -8,11 +8,11 @@
  * @author Bernardo
  */
 
-#include <stdint.h>
-#include <stdlib.h>
+
 #ifndef INC_SPI_DRIVER_H_
 #define INC_SPI_DRIVER_H_
-
+#include <stdint.h>
+#include <stdlib.h>
 /**
  * @brief Configuration structure for SPIx peripheral
  */

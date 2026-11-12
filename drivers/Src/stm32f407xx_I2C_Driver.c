@@ -12,13 +12,7 @@
  * @note              - None
  */
 
-uint32_t RCC_GetPLLOutputClock(void)
-{
-    // not implemented because we dont use PLL on this course
-    return 0;
-}
-uint16_t AHB_PRESCALER[8] = {2, 4, 8, 16, 64, 128, 256, 512};
-uint16_t APB1_PRESCALER[4] = {2, 4, 8, 16};
+
 
 static void I2C_GenerateStartCondition(I2C_RegDef_t *pI2Cx);
 static void I2C_ExecuteAddressPhaseWrite(I2C_RegDef_t *pI2Cx, uint8_t Slave_Address);
@@ -28,49 +22,7 @@ static void I2C_GenerateStopCondition(I2C_RegDef_t *pI2Cx);
 static void I2C_MasterHandleTXEInterrupt(I2C_Handle_t *pI2CHandle);
 static void I2C_MasterHandleRXNEInterrupt(I2C_Handle_t *pI2CHandle);
 
-uint32_t RCC_GetPCLK1Value(void)
-{
-    uint32_t pclk1, SystemClk;
-    uint8_t clksrc, temp, ahbp, apb1p;
 
-    clksrc = (RCC->RCC_CFGR >> 2) & 0X3;
-
-    if (clksrc == 0)
-    {
-        SystemClk = 16000000;
-    }
-    else if (clksrc == 1)
-    {
-        SystemClk = 8000000;
-    }
-    else if (clksrc == 2)
-    {
-        SystemClk = RCC_GetPLLOutputClock();
-    }
-    // to discover the ahb prescaler
-    temp = (RCC->RCC_CFGR >> 4) & 0xF;
-    if (temp < 8)
-    {
-        ahbp = 1;
-    }
-    else
-    {
-        ahbp = AHB_PRESCALER[temp - 8];
-    }
-    // to discover the apb1 prescaler
-    temp = (RCC->RCC_CFGR >> 10) & 0x7;
-    if (temp < 4)
-    {
-        apb1p = 1;
-    }
-    else
-    {
-        apb1p = APB1_PRESCALER[temp - 4];
-    }
-
-    pclk1 = (SystemClk / ahbp) / apb1p;
-    return pclk1;
-}
 
 void I2C_Peripheral_control(I2C_RegDef_t *pI2Cx, uint8_t ENorDI)
 {
@@ -695,6 +647,11 @@ void I2C_EV_IRQHandling(I2C_Handle_t *pI2CHandle)
         else
         {
             // Slave mode TX
+            //make sure that the slave is really in transmitter mode
+            if(pI2CHandle->pI2Cx->I2C_SR2 & (1 << I2C_SR2_TRA))
+            {
+                I2C_ApplicationEventCallback(pI2CHandle,I2C_EV_DATA_REQ);
+            }
         }
     }
 
@@ -713,6 +670,11 @@ void I2C_EV_IRQHandling(I2C_Handle_t *pI2CHandle)
         else
         {
             // Slave mode RX
+            //make sure that the slave is really in receiver mode
+            if(pI2CHandle->pI2Cx->I2C_SR2 & (1 << I2C_SR2_TRA))
+            {
+                I2C_ApplicationEventCallback(pI2CHandle,I2C_EV_DATA_RCV);
+            }
         }
     }
 }
@@ -729,13 +691,13 @@ void I2C_ER_IRQHandling(I2C_Handle_t *pI2CHandle)
  *
  * @return            -
  *
- 
+
  *\
 
-	
+
 
     //Know the status of  ITERREN control bit in the CR2
-	
+
 /***********************Check for Bus error************************************/
     uint32_t temp1,temp2;
     temp2 = (pI2CHandle->pI2Cx->I2C_CR2) & ( 1 << I2C_CR2_ITERREN);
@@ -744,39 +706,39 @@ void I2C_ER_IRQHandling(I2C_Handle_t *pI2CHandle)
 	if(temp1  && temp2 )
 	{
 		//This is Bus error
-		
-		//Implement the code to clear the buss error flag 
+
+		//Implement the code to clear the buss error flag
 		pI2CHandle->pI2Cx->I2C_SR1 &= ~( 1 << I2C_SR1_BERR);
-		
-		//Implement the code to notify the application about the error 
+
+		//Implement the code to notify the application about the error
 	   I2C_ApplicationEventCallback(pI2CHandle,I2C_ERROR_BERR);
 	}
 
-/***********************Check for arbitration lost error************************************/ 
+/***********************Check for arbitration lost error************************************/
 	temp1 = (pI2CHandle->pI2Cx->I2C_SR1) & ( 1 << I2C_SR1_ARLO );
 	if(temp1  && temp2)
 	{
 		//This is arbitration lost error
-		
+
 		//Implement the code to clear the arbitration lost error flag
         pI2CHandle->pI2Cx->I2C_SR1 &= ~(1 << I2C_SR1_ARLO);
-		
+
 		//Implement the code to notify the application about the error
-        I2C_ApplicationEventCallback(pI2CHandle,I2C_ERROR_ARLO); 
-	   
+        I2C_ApplicationEventCallback(pI2CHandle,I2C_ERROR_ARLO);
+
 	}
 
-/***********************Check for ACK failure  error************************************/ 
+/***********************Check for ACK failure  error************************************/
 
 	temp1 = (pI2CHandle->pI2Cx->I2C_SR1) & ( 1 << I2C_SR1_AF);
 	if(temp1  && temp2)
 	{
 		//This is ACK failure error
-		
+
 	    //Implement the code to clear the ACK failure error flag
 		pI2CHandle->pI2Cx->I2C_SR1 &= ~(1 << I2C_SR1_AF);
 		//Implement the code to notify the application about the error
-        I2C_ApplicationEventCallback(pI2CHandle,I2C_ERROR_AF); 
+        I2C_ApplicationEventCallback(pI2CHandle,I2C_ERROR_AF);
 	}
 
 /***********************Check for Overrun/underrun error************************************/
@@ -787,7 +749,7 @@ void I2C_ER_IRQHandling(I2C_Handle_t *pI2CHandle)
 		//Implement the code to clear the ACK failure error flag
 		pI2CHandle->pI2Cx->I2C_SR1 &= ~(1 << I2C_SR1_OVR);
 		//Implement the code to notify the application about the error
-        I2C_ApplicationEventCallback(pI2CHandle,I2C_ERROR_OVR); 
+        I2C_ApplicationEventCallback(pI2CHandle,I2C_ERROR_OVR);
 	}
 
 /***********************Check for Time out error************************************/
@@ -798,10 +760,20 @@ void I2C_ER_IRQHandling(I2C_Handle_t *pI2CHandle)
 		//Implement the code to clear the ACK failure error flag
 		pI2CHandle->pI2Cx->I2C_SR1 &= ~(1 << I2C_SR1_TIMEOUT);
 		//Implement the code to notify the application about the error
-        I2C_ApplicationEventCallback(pI2CHandle,I2C_ERROR_TIMEOUT); 
+        I2C_ApplicationEventCallback(pI2CHandle,I2C_ERROR_TIMEOUT);
 	}
 
 }
+
+void I2C_SlaveSendData(I2C_RegDef_t *pI2Cx, uint8_t data)
+{
+    pI2Cx->I2C_DR = data;
+}
+uint8_t I2C_SlaveReceiveData(I2C_RegDef_t *pI2Cx)
+{
+    return (uint8_t)pI2Cx->I2C_DR;
+}
+
 
 __weak void I2C_ApplicationEventCallback(I2C_Handle_t *pI2CHandle, uint8_t APP_Event)
 {

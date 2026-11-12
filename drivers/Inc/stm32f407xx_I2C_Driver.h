@@ -8,11 +8,10 @@
  * @author Bernardo
  */
 
-#include <stdint.h>
-#include <stdlib.h>
-#include "stm32f407.h"
+
 #ifndef INC_I2C_DRIVER_H_
 #define INC_I2C_DRIVER_H_
+#include "stm32f407.h"
 typedef struct
 {
     uint32_t I2C_SCLSpeed;
@@ -95,6 +94,8 @@ typedef struct
 #define I2C_ERROR_AF            5
 #define I2C_ERROR_OVR           6
 #define I2C_ERROR_TIMEOUT       7
+#define I2C_EV_DATA_REQ         8
+#define I2C_EV_DATA_RCV         9
 
 /*
  * Peripheral Clock setup
@@ -120,6 +121,10 @@ uint8_t I2C_MasterSendData_IT(I2C_Handle_t *pI2CHandle, uint8_t *pTxBuffer, uint
 uint8_t I2C_MasterReceiveData_IT(I2C_Handle_t *pI2CHandle, uint8_t *pRxBuffer, uint32_t Len, uint8_t Slave_Address, uint8_t Sr);
 void I2C_CloseReceiveData(I2C_Handle_t *pI2CHandle);
 void I2C_CloseSendData(I2C_Handle_t *pI2CHandle);
+
+// slave programming
+void I2C_SlaveSendData(I2C_RegDef_t *pI2Cx, uint8_t data);
+uint8_t I2C_SlaveReceiveData(I2C_RegDef_t *pI2Cx);
 
 /*
  * IRQ Configuration and ISR handling
